@@ -7,38 +7,25 @@
 
 global process_chars
 extern bzero
-extern puts
-extern fflush
 
 section .bss
     cmp_space: resb 256
-
-section .data
-    msg_start: db "start_loop", 0
-    msg_loop_success: db "end_loop", 0
 
 section .text
 align 16
 process_chars:
     ; rdi : char string, null-terminated
     ; esi : num chars to test unique
-    ; rdx : FILE* for flushing
 
     push rbp
     mov rbp, rsp
 
-    sub rsp, 32
+    sub rsp, 32 ; needs to remain 16-byte aligned because we call bzero
     mov qword [rsp + 0], rdi  ; store char ptr on stack
     mov qword [rsp + 16], rdi ; ... twice
     mov dword [rsp + 8], esi  ; store N on stack
-    mov qword [rsp + 24], rdx ; store FILE* on stack
 
   start:
-    mov rdi, msg_start
-    call puts
-    mov rdi, qword [rsp + 24]
-    call fflush
-
     mov rdi, cmp_space ; bzero : string
     mov rsi, 256       ; bzero : size
     call bzero
@@ -55,7 +42,7 @@ process_chars:
     mov r9, cmp_space    ; base address of cmp array
     lea r10, [r9 + r8]   ; address of cmp array entry
     mov cl, byte [r10]   ; fetch cmp array entry
-    cmp cl, 0
+    cmp cl, 0            ; compare entry to zero
     je no_mark
     mov eax, 1 ; mark this loop as "dirty"
   no_mark:
@@ -65,16 +52,10 @@ process_chars:
 
     ; after the write-mark loop, test eax to see if the sequence was unique
     cmp eax, 0
-    je loop_success
+    je loop_success ; exit early if loop was clean
 
     ; prepare for next loop
     inc qword [rsp + 0] ; advance input char pointer
-
-    mov rdi, msg_loop_success
-    call puts
-    mov rdi, qword [rsp + 24]
-    call fflush
-
     jmp start
 
   loop_success:
