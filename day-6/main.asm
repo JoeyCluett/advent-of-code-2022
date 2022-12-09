@@ -37,8 +37,7 @@ process_chars:
   write_cmp_loop:
     dec rsi ; decrement idx of current char to compare (we technically iterate backwards but it doesnt matter)
     lea r10, [rdi + rsi] ; address of input char
-    mov r8b, byte [r10]  ; fetch input char
-    movzx r8, r8b        ; zero-extend to 64 bits
+    movzx r8, byte [r10] ; fetch and zero-extend char to 64 bits
     mov r9, cmp_space    ; base address of cmp array
     lea r10, [r9 + r8]   ; address of cmp array entry
     mov cl, byte [r10]   ; fetch cmp array entry
